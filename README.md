@@ -1,0 +1,2 @@
+# Jasxzper
+TTableAndPropositionalLogicCalc
