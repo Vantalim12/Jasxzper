@@ -1,0 +1,423 @@
+import java.util.Scanner;
+import java.util.*;
+public class GumoraAndUy {
+    public static void main(String[] args) {
+        Scanner inputScanner = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("Choose an operation: ");
+            System.out.println("1. Proposition Logic Calculator");
+            System.out.println("2. Truth Table Generator");
+            System.out.println("3. Exit");
+
+            System.out.println();
+            System.out.print("Enter your choice: ");
+            String userInput = inputScanner.nextLine().trim();
+
+            if (userInput.isEmpty()) {
+                System.out.println("Exiting Program");
+                break;
+            }
+
+            try {
+                int operationChoice = Integer.parseInt(userInput);
+
+                switch (operationChoice) {
+                    case 1:
+                        System.out.println();
+                        System.out.println("Logical Expression Evaluator");
+                        while (true) {
+                            try {
+                              
+                                String logicExpression;
+                                do {
+                                    System.out.print("Enter Logical Expression: ");
+                                    logicExpression = inputScanner.nextLine();
+                                } while (!isValidExpression(logicExpression));
+
+                                char[] uniqueVars = getUniqueVariables(logicExpression);
+                                Map<Character, Boolean> varValues = getVariableValues(logicExpression, inputScanner);
+                                System.out.println();
+                                String substitutedExp = substituteValues(logicExpression, varValues);
+                                System.out.println("= " + substitutedExp);
+                                boolean result = evaluateExpression(substitutedExp);
+                                System.out.println("=" + result);
+                                System.out.println();
+                                System.out.print("Do you want to evaluate another expression? (y/n)");
+                                String continueInput = inputScanner.nextLine().toLowerCase();
+                                System.out.println();
+                                if (!continueInput.equals("yes") && !continueInput.equals("y")) {
+                                    break;
+                                }
+                            } catch (Exception e) {
+                                System.out.println("ERROR: " + e.getMessage());
+                            }
+                        }
+                        break;
+                    case 2:
+                        System.out.println();
+                        System.out.println("Truth Table Generator");
+                        while (true) {
+                            try {
+                               
+                                String logicExpression;
+                                do {
+                                    System.out.print("Enter logical expression: ");
+                                    logicExpression = inputScanner.nextLine();
+                                } while (!isValidExpression(logicExpression));
+
+                                Set<Character> uniqueVars = getVariables(logicExpression);
+                                int numVars = uniqueVars.size();
+                                System.out.println();
+                                System.out.println("Truth Table:");
+                                generateTruthTable(uniqueVars, logicExpression);
+                                System.out.println();
+                                System.out.print("Do you want to generate a truth table for another expression? (y/n): ");
+                                String continueInput = inputScanner.nextLine().toLowerCase();
+                                System.out.println();
+                                if (!continueInput.equals("yes") && !continueInput.equals("y")) {
+                                    break;
+                                }
+                            } catch (Exception e) {
+                                System.out.println("Error: " + e.getMessage());
+                            }
+                        }
+                        break;
+                    case 3:
+                        System.out.println("Exiting Program");
+                        System.exit(0);
+                        break;
+                    default:
+                        System.out.println("Invalid input!. Choose between 1-3.");
+                        System.out.println();
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Input INVALID. Please choose between 1-3.");
+                System.out.println();
+            }
+        }
+        inputScanner.close();
+    }
+
+    
+     //get variables from user input
+    private static Set<Character> getVariables(String expression) {
+        Set<Character> variables = new HashSet<>();
+        for (char c : expression.toCharArray()) {
+            if (Character.isLetter(c)) {
+                variables.add(c);
+            }
+        }
+        return variables;
+    }
+    //TRUTH TABLE
+    private static void generateTruthTable(Set<Character> variables,
+    String expression) {
+        List<Map<Character, Boolean>> truthTable = new ArrayList<>();
+        List<Character> variableList = new ArrayList<>(variables);
+        boolean allTrue = true;
+        boolean allFalse = true;
+        int numVariables = variables.size();
+        // display truth table
+        generateTruthTableRecursive(variables, expression, 0, new HashMap<>(), truthTable);
+        // Print header
+        for (char variable : variableList) {
+            System.out.print(variable + "\t");
+        }
+        System.out.println("Result");
+        for (char variable : variableList) {
+            System.out.print("="+ "\t");
+        }
+        System.out.println();
+        for (Map<Character, Boolean> variableValues : truthTable) {
+            for (char variable : variableList) {
+                boolean value = variableValues.get(variable);
+                if (value) {
+                    System.out.print('T' + "\t");
+                } else {
+                    System.out.print('F' + "\t");
+                }
+            }
+            String substitutedExpression = substituteValues(expression, variableValues);
+            boolean result = evaluateExpression(substitutedExpression);
+            System.out.println(result ? 'T' : 'F');
+            allTrue = allTrue && (result == true);
+            allFalse = allFalse && (result == false);
+        }
+        //RESULTS of the Truth Table
+        if (allTrue) {
+            System.out.println();
+            System.out.println("Logic Expression is a Tautology.");
+        //if the results are ALL TRUE
+        } else if (allFalse) {
+            System.out.println();
+            System.out.println("Logic Expression is a Contradiction."); //if the results are ALL FALSE
+        } else {
+            System.out.println();
+            System.out.println("Logic Expression is neither "); //if the results are a COMBINATION OF TRUE AND FALSE
+        }
+    }
+    private static void generateTruthTableRecursive(Set<Character> variables, String expression, int index, Map<Character, Boolean> currentValues, List<Map<Character, Boolean>> truthTable) {
+        if (index == variables.size()) {
+            truthTable.add(new HashMap<>(currentValues));
+            return;
+        }
+        char currentVariable = new ArrayList<>(variables).get(index);
+        // Generate first half of values
+        currentValues.put(currentVariable, true);
+        generateTruthTableRecursive(variables, expression, index + 1,currentValues, truthTable);
+        // Generate second half of values
+        currentValues.put(currentVariable, false);
+        generateTruthTableRecursive(variables, expression, index + 1,currentValues, truthTable);
+        // Remove current variable after processing for backtracking
+        currentValues.remove(currentVariable);
+    }
+    private static List<Character> getVariableNames(int numVariables)
+    { // method to get the  name of the variable
+        List<Character> variableNames = new ArrayList<>();
+        for (int i = 1; i <= numVariables; i++) {
+            variableNames.add((char) ('p' + i));
+        }
+        return variableNames;
+    }
+
+
+    private static boolean[] getTruthValues(int row, int numOfVariables) { // method to get truth values upon choosing option 1
+        boolean [] truthValues = new boolean[numOfVariables];
+        for (int i = numOfVariables - 1; i >= 0; i--) {
+            truthValues[(numOfVariables-1)-i]=(row & (1 << i)) == 0;
+        }
+        return truthValues;
+    }
+
+     private static String substituteValues(String expression,
+    Map<Character, Boolean> variableValues) {
+        StringBuilder substitutedExpression = new StringBuilder();
+
+
+        for (char c : expression.toCharArray()) {
+            if (Character.isLetter(c)) {
+                boolean value = variableValues.getOrDefault(c, false);
+                substitutedExpression.append(value ? 'T' : 'F');
+            } else {
+                substitutedExpression.append(c);
+            }
+        }
+
+
+        return substitutedExpression.toString();
+    }
+
+
+    private static boolean evaluateExpression(String expression) {
+        try {
+            Queue<Character> tokens = new LinkedList<>();
+            for (char c : expression.toCharArray()) {
+                if (!Character.isWhitespace(c)) {
+                    tokens.add(c);
+                }
+            }
+
+
+            boolean result = parseExpression(tokens);
+
+
+            if (!tokens.isEmpty()) {
+                throw new IllegalArgumentException("Invalid expression");
+            }
+
+
+            return result;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid expression");
+        }
+    }
+
+
+    private static boolean parseExpression(Queue<Character> tokens) {
+    //method to handle the parsing of expressions involving logical operators
+        boolean leftOperand = parseTerm(tokens);
+        while (!tokens.isEmpty() && (tokens.peek() == '|' ||
+        tokens.peek() == '^'
+                || tokens.peek() == '>' || tokens.peek() == '=')) {
+            char operator = tokens.poll();
+            boolean rightOperand = parseTerm(tokens);
+
+
+            leftOperand = applyOperator(leftOperand, operator, rightOperand);
+        }
+        return leftOperand;
+    }
+
+
+    private static boolean parseTerm(Queue<Character> tokens) {
+    //method to handle the parsing of expressions involving logical operators
+        boolean leftOperand = parseFactor(tokens);
+        while (!tokens.isEmpty() && (tokens.peek() == '^')) {
+            char operator = tokens.poll();
+            boolean rightOperand = parseFactor(tokens);
+
+
+            leftOperand = applyOperator(leftOperand, operator, rightOperand);
+        }
+        return leftOperand;
+    }
+
+
+    //method for parenthesised(?) expressions get correct results
+    private static boolean parseFactor(Queue<Character> tokens) {
+        if (tokens.isEmpty()) {
+            throw new IllegalArgumentException("UNEXPECTED END OF EXPRESSION");
+        }
+
+
+        char token = tokens.poll();
+
+
+        if (token == '(') {
+            boolean result = parseExpression(tokens);
+            if (tokens.isEmpty() || tokens.poll() != ')') {
+                throw new IllegalArgumentException("MISSING CLOSING PARENTHESIS");
+            }
+            return result;
+        } else if (Character.isLetter(token)) {
+            return token == 'T';
+        } else if (token == '~') {
+            return !parseFactor(tokens);
+        } else {
+            throw new IllegalArgumentException("UNEXPECTED TOKEN: " + token);
+        }
+    }
+
+
+    private static boolean applyOperator(boolean leftOperand, char operator, boolean rightOperand) {
+        switch (operator) {
+            case '^':
+                return leftOperand && rightOperand;
+            case '|':
+                return leftOperand || rightOperand;
+            case '>':
+                return !leftOperand || rightOperand;
+            case '=':
+                return leftOperand == rightOperand;
+            default:
+                throw new IllegalArgumentException("UNEXPECTED OPERATOR: " + operator);
+        }
+    }
+
+
+    private static Map<Character, Boolean> getVariableValues(String expression, Scanner scanner) { // method to get truth values for each variable
+        Set<Character> variables = new HashSet<>();
+        for (char c : expression.toCharArray()) {
+            if (Character.isLetter(c)) {
+                variables.add(c);
+            }
+        }
+
+
+        System.out.println();
+
+
+        System.out.println("Enter Initial Truth Value: 'T' for True,'F' for False.");
+        System.out.println();
+
+
+        Map<Character, Boolean> variableValues = new HashMap<>();
+        for (char variable : variables) {
+            char valueInput;
+            do {
+                System.out.print(variable + ": " );
+                valueInput = scanner.nextLine().toUpperCase().charAt(0);
+
+
+                if (valueInput != 'T' && valueInput != 'F') {
+
+
+                    System.out.println("INVALID INPUT. Please input 'T' for True, 'F' for False.");
+                    System.out.println();
+                }
+            } while (valueInput != 'T' && valueInput != 'F');
+
+
+            variableValues.put(variable, valueInput == 'T');
+        }
+        System.out.println();
+        return variableValues;
+    }
+
+
+    //ERROR Trapping
+    private static boolean isValidExpression(String expression) { //method to identify whether the user's expression input is valid
+        int parenthesesCount = 0;
+        boolean hasOperator = false;
+
+
+        for (char c : expression.toCharArray()) {
+            if (!Character.isLetterOrDigit(c) && !isValidOperator(c)
+&& !Character.isWhitespace(c) && c != '(' && c != ')') {
+                System.out.println();
+                System.out.println("INVALID character in expression: " + c);
+                return false;
+            }
+
+
+            if (Character.isLetter(c) && (c < 'P' || c > 'Z' && c <
+'p' || c > 'z')) {
+                System.out.println();
+                System.out.println("INVALID variable in expression: " + c);
+                return false;
+            }
+
+
+            if (isValidOperator(c)) {
+                hasOperator = true;
+            }
+
+
+            if (c == '(') {
+                parenthesesCount++;
+            } else if (c == ')') {
+                parenthesesCount--;
+                if (parenthesesCount < 0) {
+                    System.out.println();
+                    System.out.println("INVALID EXPRESSION. Closing parenthesis not match.");
+                    return false;
+                }
+            }
+        }
+
+
+        if (parenthesesCount != 0) {
+            System.out.println();
+            System.out.println("INVALID EXPRESSION. Opening parenthesis not match.");
+            return false;
+        }
+
+
+        if (!hasOperator) {
+            System.out.println();
+            System.out.println("INVALID EXPRESSION. Must contain at least one (1) operator.");
+            return false;
+        }
+
+
+        System.out.println();
+
+
+        return true;
+    }
+
+
+    private static boolean isValidOperator(char operator) { // method to identify whether the operator is valid
+        return operator == '^' || operator == '|' || operator == '~' || operator == '>' || operator == '=';
+    }
+
+
+    private static char[] getUniqueVariables(String expression) {
+//makes sure that the variables to be entered by the user are from p-z
+        // Extract unique variables from the expression within the range 'p' to 'z'
+        String validLetters = expression.replaceAll("[^p-zP-Z]", "");
+        return validLetters.toUpperCase().toCharArray();
+    }
+}
+
